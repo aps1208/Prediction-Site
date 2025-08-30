@@ -16,10 +16,19 @@ app.get("/api/test", (req, res)=> {
   res.json({ message: "Backend is working"});
 });
 
-app.post("/api/predict", (req, res) => {
-  const {teamA, teamB } = req.body;
-  res.json({winner: teamA});
+// Route to interact with Flask ML model
+const axios = require("axios");
+
+app.post("/api/predict", async (req, res) => {
+  try {
+    const flaskResponse = await axios.post("http://127.0.0.1:5001/predict", req.body);
+    res.json(flaskResponse.data);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Prediction service failed" });
+  }
 });
+
 
 // MongoDB connection
 mongoose.connect(process.env.MONGO_URI)
