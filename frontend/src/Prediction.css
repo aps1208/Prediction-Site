@@ -2,13 +2,11 @@
   background: url("./assets/Gemini_Generated_Image_vn6io0vn6io0vn6i.png") no-repeat center center fixed;
   background-size: cover;
   height: 100vh;
-  width: 100vw; /* take full width */
+  width: 100vw;
   color: white;
-
-  display: flex;              /* enable flexbox */
-  flex-direction: column;     /* stack items vertically */
-  justify-content: center;    /* center vertically */
-  align-items: center;        /* center horizontally */
+  display: flex;
+  justify-content: center;
+  align-items: center;
   text-align: center;
 }
 
@@ -17,27 +15,36 @@
   height: 100%;
   width: 100%;
   display: flex;
-  justify-content: center;
-  align-items: center;
+  justify-content: center;   /* keeps left and right spaced */
+  align-items: flex-start;   /* align from top instead of center */
+  gap: 50px;                 /* spacing between card and result */
+  padding-top: 50px;         /* push a little down */
+}
+
+
+/* New container for side by side layout */
+.container {
+  display: flex;
+  flex-direction: row;
+  gap: 40px;
+  align-items: flex-start;
 }
 
 .card {
   background: rgba(255, 255, 255, 0.1);
   padding: 30px;
   border-radius: 15px;
-  text-align: center;
-  color: white;
-  width: 400px;
+  text-align: left;
+  color:white;
+  width: 500px;
+  height: 550px;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}
-
-h1 {
-  margin-bottom: 20px;
 }
 
 .inputs {
   display: flex;
   flex-direction: column;
+  color: white;
   gap: 10px;
 }
 
@@ -57,14 +64,82 @@ button {
   border-radius: 8px;
   cursor: pointer;
 }
+button:hover { background: #218838; }
 
-button:hover {
-  background: #218838;
+/* Container for results + chart */
+.result-container {
+  display: flex;
+  flex-direction: column;  /* stack inside vertically */
+  align-items: center;     /* center text + chart */
+  justify-content: flex-start;
+  margin-left: 40px;       /* spacing from left card */
+  text-align: center;
 }
 
-.result {
-  margin-top: 20px;
+/* Probabilities section */
+.probabilities {
+  margin-top: 30px;
   font-size: 18px;
+  font-weight: bold;
+}
+
+/* Chart section */
+.chart-container {
+  margin-top: 50px;
+  width: 300px;
+  height: 300px;
+}
+
+input::placeholder,
+select::placeholder {
+  color:white;
 }
 
 
+/* Tablet and smaller screens */
+@media (max-width: 1024px) {
+  .overlay {
+    gap: 20px;
+    padding-top: 30px;
+  }
+
+  .card, .result-container {
+    width: 80%;
+  }
+}
+
+/* Mobile screens */
+@media (max-width: 768px) {
+  .overlay {
+    flex-direction: column;   /* stack card & results vertically */
+    align-items: center;
+    padding-top: 20px;
+    gap: 30px;
+  }
+
+  .card, .result-container {
+    width: 90%;       /* take most of the screen */
+    margin: 0 auto;
+  }
+
+  .chart-container {
+    width: 200px;
+    height: 200px;
+  }
+}
+
+/* Very small phones */
+@media (max-width: 480px) {
+  h2 {
+    font-size: 18px;
+  }
+
+  .probabilities {
+    font-size: 14px;
+  }
+
+  .chart-container {
+    width: 160px;
+    height: 160px;
+  }
+}
