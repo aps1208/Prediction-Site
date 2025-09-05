@@ -89,11 +89,11 @@ function Prediction() {
       return;
     }
 
-    if(target <= score)
+    /*if(target <= score)
     {
       alert("Batting team has already won!");
       return;
-    }
+    }*/
     // ✅ Overs conversion (10.3 overs -> 63 balls)
     let ballsBowled = 0;
     if (overs.includes(".")) {
