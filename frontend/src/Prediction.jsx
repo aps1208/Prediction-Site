@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom"; // ✅ ADD THIS IMPORT
 import { Pie } from "react-chartjs-2";
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from "chart.js";
 
@@ -7,6 +9,17 @@ ChartJS.register(ArcElement, Tooltip, Legend);
 import "./Prediction.css";
 
 function Prediction() {
+
+  const navigate = useNavigate(); // ✅ NOW THIS WILL WORK
+  
+  useEffect(() => {
+    const token = localStorage.getItem('token');
+    if(!token) {
+      alert("You must log in first");
+      navigate('/login'); // ✅ CHANGED TO LOWERCASE
+    }
+  }, [navigate]);
+
   const [teamA, setTeamA] = useState("");
   const [teamB, setTeamB] = useState("");
   const [score, setScore] = useState("");
@@ -30,16 +43,21 @@ function Prediction() {
   ];
 
   const teamColors = {
-  "Mumbai Indians": "#004BA0",        // Blue
-  "Chennai Super Kings": "#FFD700",   // Yellow
-  "Royal Challengers Bengaluru": "#DA291C", // Red
-  "Kolkata Knight Riders": "#3A225D", // Purple
-  "Sunrisers Hyderabad": "#FF822A",   // Orange
-  "Delhi Capitals": "#2bbee3ff",        // Dark Blue
-  "Rajasthan Royals": "#EA1A8E",      // Pink
-  "Punjab Kings": "#dc8f8ffb"           // Red
-};
+    "Mumbai Indians": "#004BA0",        // Blue
+    "Chennai Super Kings": "#FFD700",   // Yellow
+    "Royal Challengers Bengaluru": "#DA291C", // Red
+    "Kolkata Knight Riders": "#3A225D", // Purple
+    "Sunrisers Hyderabad": "#FF822A",   // Orange
+    "Delhi Capitals": "#2bbee3ff",        // Dark Blue
+    "Rajasthan Royals": "#EA1A8E",      // Pink
+    "Punjab Kings": "#dc8f8ffb"           // Red
+  };
 
+  // ✅ ADD LOGOUT FUNCTION
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    navigate('/login');
+  };
 
   const handlePredict = async () => {
     // ✅ Validation
@@ -48,52 +66,40 @@ function Prediction() {
       return;
     }
 
-    if(teamA == teamB)
-    {
+    if(teamA === teamB) { // ✅ USE === INSTEAD OF ==
       alert("Batting and Bowling teams must be different!");
       return;
     }
 
-    if(wickets < 0 || wickets > 9)
-    {
+    if(wickets < 0 || wickets > 10) { // ✅ FIXED: should be 10, not 9
       alert("Wickets must be between 0 and 10!");
       return;
     }
 
-    if(wickets==10 && score < target)
-    {
+    if(wickets == 10 && score < target) {
       alert("All out! Batting team cannot win!");
       return;
     }
-    if(wickets==10 && score >= target)
-    {
+    if(wickets == 10 && score >= target) {
       alert("All out! Batting team has already won!");
       return;
     }
 
-    if(wickets<10 && overs == 20 && score < target)
-    {
+    if(wickets < 10 && overs == 20 && score < target) {
       alert('Inning is Over! Batting team cannot win!');
       return;
     }
 
-    if(wickets<10 && overs == 20 && score >= target)
-    {
+    if(wickets < 10 && overs == 20 && score >= target) {
       alert('Inning is Over! Batting team has already won!');
       return;
     }
 
-    if(overs < 0 || overs > 20)
-    {
+    if(overs < 0 || overs > 20) {
       alert("Overs must be between 0 and 20!");
       return;
     }
 
-    /*if(target <= score)
-    {
-      alert("Batting team has already won!");
-      return;
-    }*/
     // ✅ Overs conversion (10.3 overs -> 63 balls)
     let ballsBowled = 0;
     if (overs.includes(".")) {
@@ -114,15 +120,19 @@ function Prediction() {
       balls_left: ballsLeft,
       wickets_left: 10 - parseInt(wickets),
       total_runs_x: parseInt(target),
-      crr: parseInt(score)*6/parseInt(ballsBowled),
-      rrr: runsLeft*6/ballsLeft
+      crr: parseInt(score) * 6 / ballsBowled,
+      rrr: runsLeft * 6 / ballsLeft
     };
 
     try {
       setLoading(true);
+      const token = localStorage.getItem('token');
       const response = await fetch("http://127.0.0.1:5000/api/predict", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${token}`
+        },
         body: JSON.stringify(data),
       });
 
@@ -130,19 +140,26 @@ function Prediction() {
       setPrediction(result);
     } catch (error) {
       console.error("Error fetching prediction:", error);
+      alert("Prediction failed. Please try again.");
     } finally {
       setLoading(false);
     }
   };
 
-  
   return (
     <div className="prediction-app">
       <div className="overlay">
         <div className="container">
           {/* Left - Prediction form */}
           <div className="card">
-            <h2>Cricket Win Predictor</h2>
+            <div className="header-section">
+              <h2>Cricket Win Predictor</h2>
+              {/* ✅ ADD LOGOUT BUTTON */}
+              <button className="logout-btn" onClick={handleLogout}>
+                Logout
+              </button>
+            </div>
+            
             <div className="inputs">
               <select value={teamA} onChange={(e) => setTeamA(e.target.value)}>
                 <option value="">Select Batting Team</option>
@@ -159,13 +176,45 @@ function Prediction() {
                 {venues.map((v) => <option key={v} value={v}>{v}</option>)}
               </select>
 
-              <input className="target-input" type="number" placeholder="Target" value={target} onChange={(e) => setTarget(e.target.value)}/>
+              <input 
+                className="target-input" 
+                type="number" 
+                placeholder="Target" 
+                value={target} 
+                onChange={(e) => setTarget(e.target.value)}
+              />
 
-              <input className="score-input" type="number" placeholder="Score" min="0" max={target ? target - 1 : undefined} value={score} onChange={(e) => setScore(e.target.value)} required />
+              <input 
+                className="score-input" 
+                type="number" 
+                placeholder="Score" 
+                min="0" 
+                max={target ? target - 1 : undefined} 
+                value={score} 
+                onChange={(e) => setScore(e.target.value)} 
+                required 
+              />
 
-              <input type="number" placeholder="Overs Completed (e.g. 10.3)" min="0" max="20" step="0.1" value={overs} onChange={(e) => setOvers(e.target.value)} required />
+              <input 
+                type="number" 
+                placeholder="Overs Completed (e.g. 10.3)" 
+                min="0" 
+                max="20" 
+                step="0.1" 
+                value={overs} 
+                onChange={(e) => setOvers(e.target.value)} 
+                required 
+              />
 
-              <input type="number" placeholder="Wickets Down" min="0" max="10" value={wickets} onChange={(e) => setWickets(e.target.value)} required />
+              <input 
+                type="number" 
+                placeholder="Wickets Down" 
+                min="0" 
+                max="10" 
+                value={wickets} 
+                onChange={(e) => setWickets(e.target.value)} 
+                required 
+              />
 
               <button onClick={handlePredict} disabled={loading}>
                 {loading ? "Predicting..." : "Predict"}
@@ -175,44 +224,44 @@ function Prediction() {
 
           {/* Right - Results */}
           {prediction && (
-  <div className="result-container">
-    <h2>Win Prediction</h2>
+            <div className="result-container">
+              <h2>Win Prediction</h2>
 
-    <div className="probabilities">
-      <p>{teamA || "Batting Team"}: {prediction.teamA}%</p>
-      <p>{teamB || "Bowling Team"}: {prediction.teamB}%</p>
-    </div>
+              <div className="probabilities">
+                <p>{teamA || "Batting Team"}: {prediction.teamA}%</p>
+                <p>{teamB || "Bowling Team"}: {prediction.teamB}%</p>
+              </div>
 
-    {/* Pie Chart */}
-    <div className="chart-container">
-      <Pie
-        data={{
-          labels: [teamA, teamB],
-          datasets: [
-            {
-              data: [prediction.teamA, prediction.teamB],
-              backgroundColor: [
-                teamColors[teamA] || "#36A2EB",
-                teamColors[teamB] || "#FF6384"
-              ],
-              borderColor: ["#fff", "#fff"],
-              borderWidth: 2,
-            },
-          ],
-        }}
-        options={{
-          responsive: true,
-          plugins: {
-            legend: {
-              position: "bottom",
-              labels: { color: "#fff" },
-            },
-          },
-        }}
-      />
-    </div>
-  </div>
-)}
+              {/* Pie Chart */}
+              <div className="chart-container">
+                <Pie
+                  data={{
+                    labels: [teamA, teamB],
+                    datasets: [
+                      {
+                        data: [prediction.teamA, prediction.teamB],
+                        backgroundColor: [
+                          teamColors[teamA] || "#36A2EB",
+                          teamColors[teamB] || "#FF6384"
+                        ],
+                        borderColor: ["#fff", "#fff"],
+                        borderWidth: 2,
+                      },
+                    ],
+                  }}
+                  options={{
+                    responsive: true,
+                    plugins: {
+                      legend: {
+                        position: "bottom",
+                        labels: { color: "#fff" },
+                      },
+                    },
+                  }}
+                />
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
